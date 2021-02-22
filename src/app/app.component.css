@@ -1,0 +1,120 @@
+.game {  
+  width: 900px;
+  height: 600px;  
+  margin: 30px auto 20px auto; 
+  position: relative;
+  overflow: hidden;
+
+  background-image: url("/assets/background.png");
+  background-size: cover;
+  background-repeat: repeat-x;  
+  
+  animation: animacao-background 4s infinite linear;  
+  -webkit-animation: animacao-background 4s infinite linear;
+  -moz-animation: animacao-background 4s infinite linear;
+  -ms-animation: animacao-background 4s infinite linear;
+  -o-animation: animacao-background 4s infinite linear; 
+}
+
+.dinossauro {
+  position: absolute;      
+  height: 101px;  
+  background-image: url("/assets/yoshi-parado.png");  
+  background-size: cover;    
+}
+
+.cacto {
+  position: absolute;
+  width: 60px;
+  height: 57px;    
+  background-image: url("/assets/cacto.png");
+  background-size: contain;
+  background-repeat: no-repeat;  
+}
+
+.pontuacao {
+  position: absolute;
+  font-size: xx-large;
+  font-weight: bold;
+  margin-top: 15px;
+  margin-left: 25px;  
+}
+
+.iniciarJogo {
+  position: absolute;   
+  display: flex;
+  flex-direction: column;   
+  left: 0;
+  right: 0;
+  top: 40%;
+  bottom: 40%;
+  align-items: center;    
+}
+
+.mensagem{
+  position: relative;
+  text-align: center;
+  font-size: xx-large;      
+  margin-bottom: 20px;
+}
+
+.btn-iniciar {      
+  padding: 10px 20px;  
+  font-size: x-large;  
+  text-align: center;
+    
+  box-shadow: 3px 4px 0px 0px #8a2a21;
+  background:linear-gradient(to bottom, #c62d1f 5%, #f24437 100%);
+  background-color:#c62d1f;
+  border: 0 solid #8a2a21;
+  border-radius:7px;  
+  cursor:pointer;
+  color:#ffffff;
+  outline: none;
+}
+.btn-iniciar:hover {
+  background:linear-gradient(to bottom, #f24437 5%, #c62d1f 100%);
+  background-color:#f24437;
+}
+button:active {
+  transform: scale(0.95);
+  transition: 0.5s;
+}
+
+.instrucoes {
+  text-align: center;
+  font-size: x-large;
+}
+
+/* Animações */
+.animacao-pulando {
+  background-image: url("/assets/yoshi-pulando.png");  
+}
+
+.animacao-descendo {
+  background-image: url("/assets/yoshi-descendo.png");  
+}
+
+.animacao-caido {
+  background-image: url("/assets/yoshi-caido.png");  
+}
+
+.animacao-correndo {
+  background-image: url("/assets/yoshi.png");
+  animation: animacao-correndo .3s steps(2) infinite;
+  
+  -webkit-animation: animacao-correndo .3s steps(2) infinite;
+  -moz-animation: animacao-correndo .3s steps(2) infinite;
+  -ms-animation: animacao-correndo .3s steps(2) infinite;
+  -o-animation: animacao-correndo .3s steps(2) infinite;
+}
+
+@keyframes animacao-background {  
+  from { background-position: 0%; }
+  to { background-position: 400%; }
+}
+
+@keyframes animacao-correndo {
+	from { background-position-x: 0%; }  /*posição inicial obtida na imagem com os sprites*/
+	to { background-position-x: 200%; }  /*a largura total da imagem é 72, cada frame da animação tem 36px de tamanho*/
+}

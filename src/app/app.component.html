@@ -1,0 +1,18 @@
+<div class="game" [style.animation-play-state]="animacaoBackground" >
+  <!-- [ngClass]="{'animacao-background': animacaoBackground}" -->
+  <div class="iniciarJogo" *ngIf="fimDeJogo">
+    <div class="mensagem" *ngIf="perdeu">Você perdeu =(</div>
+    <button type="button" class="btn-iniciar" (click)="iniciarJogo()">Clique aqui para jogar!</button>
+  </div>
+  <div class="pontuacao">
+    <div>Nivel: {{ nivel }}</div>
+    <div>Pontuação: {{ pontuacao }}</div>
+  </div>
+  <div class="background"></div>
+  <div class="dinossauro {{animacaoPlayer}}" [ngStyle]="configurarEstilosPlayer()"></div>    
+  <div class="cacto" *ngFor="let cacto of cactosPosicao" 
+    style.left="{{ cacto }}px" style.bottom="{{ cactoPosicaoBottomInicial }}px"></div>      
+</div>
+<div>  
+  <p class="instrucoes">Instruções: Desvie-se dos obstáculos! Para pular clique na tela ou aperte qualquer tecla</p>
+</div>
