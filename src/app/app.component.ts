@@ -1,7 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { fromEvent, Subscription, interval, timer } from 'rxjs';
-import { map } from 'rxjs/operators';
-
+import { fromEvent, Subscription, interval, timer, asyncScheduler, range, of } from 'rxjs';
+import { concatMap, debounceTime, delay, map, takeWhile, tap, throttleTime } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -21,34 +20,27 @@ export class AppComponent implements OnInit, OnDestroy{
 
   cactoPosicaoBottomInicial: number = 70;
   cactoPosicaoLeftInicial: number = 900;
-  cactoVelocidadeInicial = 7;
-  cactoVelocidadeIncremento = 2;
-  totalObstaculos = 5;
+  cactoVelocidade: number = 7;  
+  totalObstaculos: number = 7;
+  intervaloMinimoEntreObstaculos: number = 600;
 
+  pontos: number = 10;
   frameRateAnimacao = 30;
-
-  // A cada x segundos aumentará a dificuldade
-  tempoAumentarDificuldade = 10000;
 
   //-------------------------------------------------------------------
   estaPulando: boolean = false;  
   dinoBottom: number = this.dinoPosicaoBottomInicial;
   
   cactosPosicao: number[] = new Array<number>(this.totalObstaculos);
-  cactoVelocidade: number;  
-
+    
   fimDeJogo: boolean = true;
-  perdeu: boolean = false;
-  
-  nivel: number;
-  pontos: number;
+  exibirMsgPerdeu: boolean = false;
+    
   pontuacao: number;
 
   click: Subscription;
   teclaPressionada: Subscription;  
-  aumentadorDificuldade: Subscription;
-  gerenciadorObstaculos: Subscription;
-
+    
   animacaoPlayer: string = 'animacao-parado';  
   animacaoBackground: string = 'paused';
 
@@ -63,51 +55,40 @@ export class AppComponent implements OnInit, OnDestroy{
 
   //-------------------------------------------------------------------
   iniciarJogo(): void {
-    if(!this.fimDeJogo) {        
-      return;
-    }
-
+    
     this.fimDeJogo = false; 
+    
     this.animacaoBackground = 'running';  
-
-    this.nivel = 1;
-    this.pontos = 10;
+    
     this.pontuacao = 0;
-    this.cactoVelocidade = this.cactoVelocidadeInicial;
-
+    
+    this.resetarPosicaoObstaculos();
+    
     this.click = fromEvent(document, 'click').subscribe(() => this.pulo());
     this.teclaPressionada = fromEvent(document, 'keydown').subscribe(() => this.pulo());
-
-    this.aumentadorDificuldade = timer(10000, this.tempoAumentarDificuldade).subscribe(() => {      
-      this.nivel++;
-      this.pontos += 10;
-      this.cactoVelocidade += this.cactoVelocidadeIncremento; 
-    });
-    
+   
     let indice = 0;
-    
-    const tempoAleatorio = interval(1700)
-    .pipe(
-      map(() => {
-        return (Math.floor((Math.random() * 15)) + 1) * 100;
-    }));;   
 
-    this.gerenciadorObstaculos = tempoAleatorio.subscribe((tempo: number) => {      
-      timer(tempo).subscribe(() => {        
+    interval(this.frameRateAnimacao)
+      .pipe(
+        takeWhile(() => !this.fimDeJogo),
+        concatMap(i => of(i)
+          .pipe(delay(this.intervaloMinimoEntreObstaculos + this.obtemNumeroAleatorio(0, 14) * 100))))
+      .subscribe(() => { 
         this.moveCacto(indice);
         indice++;
-        if(indice === this.totalObstaculos - 1) {
+        if(indice === this.totalObstaculos) {
           indice = 0;     
-        }        
-      })      
+        }          
     });
   }
 
 
   //-------------------------------------------------------------------
   gameOver(): void {
+
     this.fimDeJogo = true;    
-    this.perdeu = true;
+    this.exibirMsgPerdeu = true;
 
     this.animacaoBackground = 'paused';
     this.animacaoPlayer = 'animacao-caido';
@@ -116,6 +97,7 @@ export class AppComponent implements OnInit, OnDestroy{
     this.pararSubscriptions();
   }
   
+
   //-------------------------------------------------------------------
   pulo(): void {
     if(this.estaPulando)
@@ -160,29 +142,28 @@ export class AppComponent implements OnInit, OnDestroy{
 
   //-------------------------------------------------------------------
   moveCacto(index: number): void {    
-    
-    const contador = interval(this.frameRateAnimacao);
-    let moveParaEsquerda = contador.subscribe(() => {
-      if(this.fimDeJogo)
-        return;
+        
+    let moveParaEsquerda = interval(this.frameRateAnimacao)
+      .pipe(takeWhile(() => !this.fimDeJogo))
+      .subscribe(() => {
+        // Saiu da tela
+        if (this.cactosPosicao[index] < -60) {   
+          this.pontuacao += this.pontos;
+          moveParaEsquerda.unsubscribe();
 
-      // Saiu da tela
-      if (this.cactosPosicao[index] < -60) {   
-        this.pontuacao += this.pontos;
-        moveParaEsquerda.unsubscribe();
-        // Reseta posição
-        this.cactosPosicao[index] = this.cactoPosicaoLeftInicial;
-      } 
-      // Game over
-      else if (this.cactosPosicao[index] > this.dinoPosicaoLeft
-              && this.cactosPosicao[index] < (this.dinoPosicaoLeft + this.dinoWidth) - 40 
-              && this.dinoBottom < this.puloAlturaSafe) {        
-        moveParaEsquerda.unsubscribe();
-        this.gameOver();
-      }       
-      else {        
-        this.cactosPosicao[index] -= this.cactoVelocidade;        
-      }
+          // Reseta posição
+          this.cactosPosicao[index] = this.cactoPosicaoLeftInicial;
+        } 
+        // Game over
+        else if (this.cactosPosicao[index] > this.dinoPosicaoLeft
+                && this.cactosPosicao[index] < (this.dinoPosicaoLeft + this.dinoWidth) - 40 
+                && this.dinoBottom < this.puloAlturaSafe) {        
+          moveParaEsquerda.unsubscribe();
+          this.gameOver();
+        }       
+        else {        
+          this.cactosPosicao[index] -= this.cactoVelocidade;        
+        }
     });
   }  
 
@@ -208,8 +189,13 @@ export class AppComponent implements OnInit, OnDestroy{
   //-------------------------------------------------------------------
   pararSubscriptions(){
     this.click.unsubscribe();
-    this.teclaPressionada.unsubscribe();
-    this.aumentadorDificuldade.unsubscribe();
-    this.gerenciadorObstaculos.unsubscribe();
+    this.teclaPressionada.unsubscribe();    
+  }
+
+  //-------------------------------------------------------------------
+  obtemNumeroAleatorio(min: number, max: number) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min)) + min;
   }
 }

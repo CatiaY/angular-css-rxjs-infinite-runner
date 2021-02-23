@@ -54,8 +54,10 @@
 .mensagem{
   position: relative;
   text-align: center;
-  font-size: xx-large;      
+  font-size: 48px; 
+  font-weight: bolder;     
   margin-bottom: 20px;
+  color: white;
 }
 
 .btn-iniciar {      
