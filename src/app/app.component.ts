@@ -1,6 +1,6 @@
 import { Component, OnDestroy } from '@angular/core';
-import { fromEvent, Subscription, interval, timer, asyncScheduler, range, of } from 'rxjs';
-import { concatMap, debounceTime, delay, map, takeWhile, tap, throttleTime } from 'rxjs/operators';
+import { fromEvent, Subscription, interval, of } from 'rxjs';
+import { concatMap, delay, takeWhile } from 'rxjs/operators';
 import { Obstaculo } from './models/obstaculo';
 
 @Component({
@@ -41,7 +41,7 @@ export class AppComponent implements OnDestroy{
 
   click: Subscription;
   teclaPressionada: Subscription;
-  teste: Subscription;
+  controladorObstaculos: Subscription;
     
   animacaoPlayer: string = 'animacao-parado';  
   animacaoBackground: string = 'paused';
@@ -75,7 +75,7 @@ export class AppComponent implements OnDestroy{
     this.teclaPressionada = fromEvent(document, 'keydown').subscribe(() => this.pulo());
    
     let indice = 0;
-    this.teste = interval(this.frameRateAnimacao)
+    this.controladorObstaculos = interval(this.frameRateAnimacao)
       .pipe(        
         concatMap(i => of(i)
           .pipe(            
@@ -207,7 +207,7 @@ export class AppComponent implements OnDestroy{
   pararSubscriptions(){
     this.click.unsubscribe();
     this.teclaPressionada.unsubscribe();    
-    this.teste.unsubscribe();
+    this.controladorObstaculos.unsubscribe();
   }
 
   //-------------------------------------------------------------------
