@@ -2,16 +2,14 @@
 
   <div class="iniciarJogo" *ngIf="fimDeJogo">
     <div class="mensagem" *ngIf="exibirMsgPerdeu">Você perdeu =(</div>
-    <button type="button" *ngIf="!exibirMsgPerdeu" class="btn-iniciar" (click)="iniciarJogo()">Clique aqui para jogar!</button>
+    <button type="button" class="btn-iniciar" (click)="iniciarJogo()">Clique aqui para jogar!</button>
   </div>
    
   <div class="pontuacao">Pontuação: {{ pontuacao }}</div>
   
   <div class="dinossauro {{animacaoPlayer}}" [ngStyle]="configurarEstilosPlayer()"></div>    
   
-  <div class="cacto" *ngFor="let cacto of cactosPosicao" 
-       style.left="{{ cacto }}px" style.bottom="{{ cactoPosicaoBottomInicial }}px">
-  </div>
+  <div class="cacto" *ngFor="let cacto of cactos" [ngStyle]="configurarEstilosObstaculo(cacto)"></div>
   
 </div>
 

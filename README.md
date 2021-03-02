@@ -5,8 +5,6 @@ Projeto utilizando Typescript e Angular 11.
 * Animações configuradas no CSS e aplicadas por meio de classes.
 * Movimento dos personagens utilizando a biblioteca rxjs.
 
-Obs.: Foi retirado o botão jogar novamente, pois a reinicialização do jogo estava causando problemas com o movimento dos obstáculos.
-
 <p>&nbsp;</p>
 
 O desenvolvimento do projeto base foi feito a partir da atividade "Recriando o famoso jogo do dinossauro sem internet", de [Celso Henrique](https://github.com/celso-henrique/dio-dino-game), da Digital Innovation One.

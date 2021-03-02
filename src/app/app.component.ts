@@ -1,13 +1,14 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { fromEvent, Subscription, interval, timer, asyncScheduler, range, of } from 'rxjs';
 import { concatMap, debounceTime, delay, map, takeWhile, tap, throttleTime } from 'rxjs/operators';
+import { Obstaculo } from './models/obstaculo';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']  
 })
-export class AppComponent implements OnInit, OnDestroy{
+export class AppComponent implements OnDestroy{
     
   //-------------------------------------------------------------------
   // CONFIGURAÇÕES
@@ -22,7 +23,7 @@ export class AppComponent implements OnInit, OnDestroy{
   cactoPosicaoLeftInicial: number = 900;
   cactoVelocidade: number = 7;  
   totalObstaculos: number = 7;
-  intervaloMinimoEntreObstaculos: number = 600;
+  intervaloMinimoEntreObstaculos: number = 700;
 
   pontos: number = 10;
   frameRateAnimacao = 30;
@@ -31,7 +32,7 @@ export class AppComponent implements OnInit, OnDestroy{
   estaPulando: boolean = false;  
   dinoBottom: number = this.dinoPosicaoBottomInicial;
   
-  cactosPosicao: number[] = new Array<number>(this.totalObstaculos);
+  cactos: Array<Obstaculo> = [];
     
   fimDeJogo: boolean = true;
   exibirMsgPerdeu: boolean = false;
@@ -39,14 +40,11 @@ export class AppComponent implements OnInit, OnDestroy{
   pontuacao: number;
 
   click: Subscription;
-  teclaPressionada: Subscription;  
+  teclaPressionada: Subscription;
+  teste: Subscription;
     
   animacaoPlayer: string = 'animacao-parado';  
   animacaoBackground: string = 'paused';
-
-  ngOnInit(): void {
-    this.resetarPosicaoObstaculos();
-  }
 
   ngOnDestroy(): void {
     this.pararSubscriptions();
@@ -58,29 +56,48 @@ export class AppComponent implements OnInit, OnDestroy{
     
     this.fimDeJogo = false; 
     
-    this.animacaoBackground = 'running';  
+    this.animacaoBackground = 'running';
+    this.animacaoPlayer = 'animacao-correndo';
+    this.estaPulando = false;
     
     this.pontuacao = 0;
     
-    this.resetarPosicaoObstaculos();
+    if (this.cactos.length === 0) {
+      for (let i = 0; i < this.totalObstaculos; i++) {
+        this.cactos.push({
+          left: this.cactoPosicaoLeftInicial,
+          emTela: false
+        });
+      }
+    }
     
     this.click = fromEvent(document, 'click').subscribe(() => this.pulo());
     this.teclaPressionada = fromEvent(document, 'keydown').subscribe(() => this.pulo());
    
     let indice = 0;
-
-    interval(this.frameRateAnimacao)
-      .pipe(
-        takeWhile(() => !this.fimDeJogo),
+    this.teste = interval(this.frameRateAnimacao)
+      .pipe(        
         concatMap(i => of(i)
-          .pipe(delay(this.intervaloMinimoEntreObstaculos + this.obtemNumeroAleatorio(0, 14) * 100))))
-      .subscribe(() => { 
-        this.moveCacto(indice);
+          .pipe(            
+            delay(this.intervaloMinimoEntreObstaculos + this.obtemNumeroAleatorio(0, 14) * 100))))
+      .subscribe(() => {          
+        this.cactos[indice].emTela = true;
         indice++;
         if(indice === this.totalObstaculos) {
           indice = 0;     
-        }          
+        }        
     });
+
+    interval(this.frameRateAnimacao)
+      .pipe(
+        takeWhile(() => !this.fimDeJogo))
+      .subscribe(() => {
+        this.puloAnimacao();
+
+        for(let i = 0; i < this.totalObstaculos; i++) {          
+          this.moveCacto(this.cactos[i]);
+        }
+      });
   }
 
 
@@ -91,6 +108,7 @@ export class AppComponent implements OnInit, OnDestroy{
     this.exibirMsgPerdeu = true;
 
     this.animacaoBackground = 'paused';
+    this.dinoBottom = this.dinoPosicaoBottomInicial;
     this.animacaoPlayer = 'animacao-caido';
 
     this.resetarPosicaoObstaculos();
@@ -104,74 +122,65 @@ export class AppComponent implements OnInit, OnDestroy{
       return;     
     
     this.estaPulando = true;  
-    this.animacaoPlayer = 'animacao-pulando';  
+    this.animacaoPlayer = 'animacao-pulando';
+  }
 
-    const contador = interval(this.frameRateAnimacao);
-    let puloSubida = contador.subscribe(() => {
-      // Começa a descida
-      if (this.dinoBottom >= this.puloAlturaMax) {
-        puloSubida.unsubscribe();
-        this.animacaoPlayer = 'animacao-descendo';
+  puloAnimacao(): void {
+    if(!this.estaPulando)
+      return;    
 
-        let puloDescida = contador.subscribe(() => {
-          // Aterrissou
-          if (this.dinoBottom <= this.dinoPosicaoBottomInicial) {
-            puloDescida.unsubscribe();
-            this.dinoBottom = this.dinoPosicaoBottomInicial;
-            this.estaPulando = false;
-            if(this.fimDeJogo){
-              this.animacaoPlayer = 'animacao-caido';
-            }
-            else {
-              this.animacaoPlayer = 'animacao-correndo';
-            }
-          } 
-          // Descendo
-          else {
-            this.dinoBottom -= this.puloVelocidade;            
-          }
-        });
+    // Começa a descida
+    if (this.animacaoPlayer === 'animacao-descendo' || this.dinoBottom >= this.puloAlturaMax) {      
+      this.animacaoPlayer = 'animacao-descendo';
+      
+      // Aterrissou
+      if (this.dinoBottom <= this.dinoPosicaoBottomInicial) {        
+        this.dinoBottom = this.dinoPosicaoBottomInicial;
+        this.estaPulando = false;
+        this.animacaoPlayer = 'animacao-correndo';        
       } 
-      // Subindo
-      else {        
-        this.dinoBottom += this.puloVelocidade;        
+      // Descendo
+      else {
+        this.dinoBottom -= this.puloVelocidade;            
       }
-    });
+
+    } 
+    // Subindo
+    else if (this.animacaoPlayer === 'animacao-pulando') {        
+      this.dinoBottom += this.puloVelocidade;        
+    }    
   }
 
 
   //-------------------------------------------------------------------
-  moveCacto(index: number): void {    
-        
-    let moveParaEsquerda = interval(this.frameRateAnimacao)
-      .pipe(takeWhile(() => !this.fimDeJogo))
-      .subscribe(() => {
-        // Saiu da tela
-        if (this.cactosPosicao[index] < -60) {   
-          this.pontuacao += this.pontos;
-          moveParaEsquerda.unsubscribe();
-
-          // Reseta posição
-          this.cactosPosicao[index] = this.cactoPosicaoLeftInicial;
-        } 
-        // Game over
-        else if (this.cactosPosicao[index] > this.dinoPosicaoLeft
-                && this.cactosPosicao[index] < (this.dinoPosicaoLeft + this.dinoWidth) - 40 
-                && this.dinoBottom < this.puloAlturaSafe) {        
-          moveParaEsquerda.unsubscribe();
-          this.gameOver();
-        }       
-        else {        
-          this.cactosPosicao[index] -= this.cactoVelocidade;        
-        }
-    });
-  }  
+  moveCacto(cacto: Obstaculo): void {    
+    
+    if(!cacto.emTela)
+      return;
+    
+    // Saiu da tela
+    if (cacto.left < -60) {   
+      this.pontuacao += this.pontos;      
+      cacto.left = this.cactoPosicaoLeftInicial;
+      cacto.emTela = false;
+    } 
+    // Game over
+    else if (cacto.left > this.dinoPosicaoLeft
+            && cacto.left < (this.dinoPosicaoLeft + this.dinoWidth) - 40 
+            && this.dinoBottom < this.puloAlturaSafe) {      
+      this.gameOver();
+    }       
+    else {        
+      cacto.left -= this.cactoVelocidade;        
+    }
+  }
 
 
   //-------------------------------------------------------------------
   resetarPosicaoObstaculos(){
     for(let i = 0; i < this.totalObstaculos; i++) {
-      this.cactosPosicao[i] = this.cactoPosicaoLeftInicial;
+      this.cactos[i].left = this.cactoPosicaoLeftInicial;
+      this.cactos[i].emTela = false;
     }    
   }
 
@@ -186,10 +195,19 @@ export class AppComponent implements OnInit, OnDestroy{
     return estilos;
   }
 
+  configurarEstilosObstaculo(obstaculo: Obstaculo): any {
+    let estilos = {
+      'bottom': `${this.cactoPosicaoBottomInicial}px`,
+      'left': `${obstaculo.left}px`      
+    };
+    return estilos;
+  }
+
   //-------------------------------------------------------------------
   pararSubscriptions(){
     this.click.unsubscribe();
     this.teclaPressionada.unsubscribe();    
+    this.teste.unsubscribe();
   }
 
   //-------------------------------------------------------------------
